@@ -1,5 +1,6 @@
 from dataclasses import dataclass, field
 from typing import List, Optional
+from datetime import datetime, timedelta
 
 
 PRIORITY_RANK = {
@@ -24,15 +25,42 @@ class Task:
     def describe(self) -> str:
         """Return a readable description of the task."""
         time_text = self.preferred_time if self.preferred_time else "unspecified time"
+        date_text = self.scheduled_date if self.scheduled_date else "unspecified date"
         status = "completed" if self.completed else "not completed"
         return (
             f"{self.title} ({self.category}) - {self.duration_minutes} min, "
-            f"priority: {self.priority}, time: {time_text}, status: {status}"
+            f"priority: {self.priority}, date: {date_text}, time: {time_text}, status: {status}"
         )
 
     def mark_complete(self) -> None:
         """Mark the task as completed."""
         self.completed = True
+
+    def create_next_recurring_task(self) -> Optional["Task"]:
+        """Create the next task instance if this is a recurring task."""
+        if not self.recurring or not self.recurrence_pattern or not self.scheduled_date:
+            return None
+
+        current_date = datetime.strptime(self.scheduled_date, "%Y-%m-%d")
+
+        if self.recurrence_pattern.lower() == "daily":
+            next_date = current_date + timedelta(days=1)
+        elif self.recurrence_pattern.lower() == "weekly":
+            next_date = current_date + timedelta(weeks=1)
+        else:
+            return None
+
+        return Task(
+            title=self.title,
+            category=self.category,
+            duration_minutes=self.duration_minutes,
+            priority=self.priority,
+            preferred_time=self.preferred_time,
+            scheduled_date=next_date.strftime("%Y-%m-%d"),
+            recurring=self.recurring,
+            recurrence_pattern=self.recurrence_pattern,
+            completed=False,
+        )
 
 
 @dataclass
@@ -54,6 +82,10 @@ class Pet:
     def get_tasks(self) -> List[Task]:
         """Return all tasks for this pet."""
         return self.tasks
+
+    def get_tasks_by_status(self, completed: bool) -> List[Task]:
+        """Return tasks filtered by completion status."""
+        return [task for task in self.tasks if task.completed == completed]
 
 
 @dataclass
@@ -78,6 +110,13 @@ class Owner:
                 all_tasks.append((pet, task))
         return all_tasks
 
+    def get_tasks_for_pet(self, pet_name: str) -> List[Task]:
+        """Return all tasks for one named pet."""
+        for pet in self.pets:
+            if pet.name.lower() == pet_name.lower():
+                return pet.tasks
+        return []
+
 
 class Scheduler:
     def __init__(self, owner: Owner):
@@ -100,25 +139,57 @@ class Scheduler:
 
         return sorted(tasks, key=sort_key)
 
+    def sort_by_time(self, tasks: List[tuple[Pet, Task]]) -> List[tuple[Pet, Task]]:
+        """Sort tasks by preferred time only."""
+        return sorted(
+            tasks,
+            key=lambda item: item[1].preferred_time if item[1].preferred_time else "99:99"
+        )
+
+    def filter_tasks_by_status(self, completed: bool) -> List[tuple[Pet, Task]]:
+        """Return all tasks filtered by completion status."""
+        return [
+            (pet, task)
+            for pet, task in self.owner.get_all_tasks()
+            if task.completed == completed
+        ]
+
+    def filter_tasks_by_pet(self, pet_name: str) -> List[Task]:
+        """Return all tasks for a specific pet name."""
+        return self.owner.get_tasks_for_pet(pet_name)
+
     def detect_conflicts(self, tasks: List[tuple[Pet, Task]]) -> List[str]:
-        """Return messages for tasks that share the same preferred time."""
+        """Return warning messages for tasks scheduled at the same time."""
         seen_times = {}
         conflicts = []
 
         for pet, task in tasks:
-            if task.preferred_time is None:
+            if not task.preferred_time:
                 continue
 
             if task.preferred_time in seen_times:
                 other_pet, other_task = seen_times[task.preferred_time]
                 conflicts.append(
-                    f"Conflict at {task.preferred_time}: "
+                    f"Warning: conflict at {task.preferred_time} between "
                     f"{other_pet.name} - {other_task.title} and {pet.name} - {task.title}"
                 )
             else:
                 seen_times[task.preferred_time] = (pet, task)
 
         return conflicts
+
+    def mark_task_complete(self, pet_name: str, task_title: str) -> bool:
+        """Mark a task complete and generate the next recurring copy if needed."""
+        for pet in self.owner.pets:
+            if pet.name.lower() == pet_name.lower():
+                for task in pet.tasks:
+                    if task.title.lower() == task_title.lower() and not task.completed:
+                        task.mark_complete()
+                        next_task = task.create_next_recurring_task()
+                        if next_task:
+                            pet.add_task(next_task)
+                        return True
+        return False
 
     def explain_schedule(self, schedule: List[tuple[Pet, Task]]) -> List[str]:
         """Explain why each task appears in the schedule."""

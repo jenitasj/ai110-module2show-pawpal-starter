@@ -25,10 +25,14 @@ After reviewing my first class skeleton, I made a few design improvements. I add
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
 
+My scheduler considers task priority, preferred time, and completion status. I decided priority mattered most because tasks like feeding or medication are more important than optional care tasks. Preferred time was the next most important constraint because it helps make the schedule more realistic and organized.
+
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
+
+One tradeoff my scheduler makes is that conflict detection only checks for exact matching preferred times instead of checking for overlapping durations. For example, two tasks at 08:00 will be flagged, but a task from 8 to 8:30 and another from 8:15 to 8:45 would not yet be detected as overlapping. I chose this approach because it is simpler and appropriate for the current scale of the project, even though it is less precise than a full time overlap algorithm.
 
 ---
 
@@ -53,12 +57,15 @@ After reviewing my first class skeleton, I made a few design improvements. I add
 - What behaviors did you test?
 - Why were these tests important?
 
+I tested whether calling mark_complete() updates a task's completion status and whether adding a task to a pet increases that pet's task count. These tests were important because they verify that the basic data model works correctly before building more advanced scheduling behavior.
+
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
 - What edge cases would you test next if you had more time?
 
----
+I am pretty confident that my scheduler works correctly for basic scheduling because the CLI demo produced the expected output and my initial tests passed. If I had more time, I would test edge cases such as duplicate task times, invalid priorities, and recurring tasks.
+
 
 ## 5. Reflection
 

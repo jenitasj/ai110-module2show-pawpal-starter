@@ -1,36 +1,51 @@
 from pawpal_system import Owner, Pet, Task, Scheduler
 
 
-def print_schedule(schedule):
-    print("\n=== Today's Schedule ===")
+def print_schedule(title, schedule):
+    print(f"\n=== {title} ===")
     if not schedule:
-        print("No tasks scheduled for today.")
+        print("No tasks found.")
         return
 
     for index, (pet, task) in enumerate(schedule, start=1):
         time_text = task.preferred_time if task.preferred_time else "No set time"
+        date_text = task.scheduled_date if task.scheduled_date else "No set date"
         print(
-            f"{index}. {time_text} | {pet.name} ({pet.species}) | "
+            f"{index}. {date_text} | {time_text} | {pet.name} ({pet.species}) | "
             f"{task.title} | {task.priority.title()} priority | "
-            f"{task.duration_minutes} min"
+            f"{task.duration_minutes} min | Completed: {task.completed}"
         )
 
 
-def print_explanations(explanations):
-    print("\n=== Schedule Explanations ===")
-    if not explanations:
-        print("No explanations available.")
+def print_task_list(title, tasks):
+    print(f"\n=== {title} ===")
+    if not tasks:
+        print("No tasks found.")
         return
 
-    for explanation in explanations:
-        print(f"- {explanation}")
+    for index, task in enumerate(tasks, start=1):
+        time_text = task.preferred_time if task.preferred_time else "No set time"
+        date_text = task.scheduled_date if task.scheduled_date else "No set date"
+        print(
+            f"{index}. {date_text} | {time_text} | {task.title} | "
+            f"{task.priority.title()} priority | Completed: {task.completed}"
+        )
+
+
+def print_messages(title, messages):
+    print(f"\n=== {title} ===")
+    if not messages:
+        print("None")
+        return
+
+    for message in messages:
+        print(f"- {message}")
 
 
 def main():
-    owner = Owner(name="Jordan", preferences=["morning walks", "evening feeding"])
-
-    dog = Pet(name="Mochi", species="dog", age=3, preferences=["short walks"])
-    cat = Pet(name="Luna", species="cat", age=5, preferences=["quiet evenings"])
+    owner = Owner(name="Jordan")
+    dog = Pet(name="Mochi", species="dog", age=3)
+    cat = Pet(name="Luna", species="cat", age=5)
 
     owner.add_pet(dog)
     owner.add_pet(cat)
@@ -42,6 +57,9 @@ def main():
             duration_minutes=20,
             priority="high",
             preferred_time="08:00",
+            scheduled_date="2026-03-29",
+            recurring=True,
+            recurrence_pattern="daily",
         )
     )
 
@@ -52,6 +70,7 @@ def main():
             duration_minutes=10,
             priority="high",
             preferred_time="07:30",
+            scheduled_date="2026-03-29",
         )
     )
 
@@ -61,7 +80,10 @@ def main():
             category="health",
             duration_minutes=5,
             priority="medium",
-            preferred_time="09:00",
+            preferred_time="08:00",
+            scheduled_date="2026-03-29",
+            recurring=True,
+            recurrence_pattern="daily",
         )
     )
 
@@ -72,23 +94,33 @@ def main():
             duration_minutes=15,
             priority="low",
             preferred_time="18:00",
+            scheduled_date="2026-03-29",
         )
     )
 
     scheduler = Scheduler(owner)
-    schedule = scheduler.build_daily_schedule()
-    explanations = scheduler.explain_schedule(schedule)
-    conflicts = scheduler.detect_conflicts(schedule)
 
-    print_schedule(schedule)
-    print_explanations(explanations)
+    daily_schedule = scheduler.build_daily_schedule()
+    print_schedule("Daily Schedule (Priority + Time)", daily_schedule)
 
-    print("\n=== Conflicts ===")
-    if conflicts:
-        for conflict in conflicts:
-            print(f"- {conflict}")
-    else:
-        print("No conflicts found.")
+    time_sorted = scheduler.sort_by_time(owner.get_all_tasks())
+    print_schedule("Tasks Sorted by Time", time_sorted)
+
+    incomplete_tasks = scheduler.filter_tasks_by_status(False)
+    print_schedule("Incomplete Tasks", incomplete_tasks)
+
+    luna_tasks = scheduler.filter_tasks_by_pet("Luna")
+    print_task_list("Tasks for Luna", luna_tasks)
+
+    conflicts = scheduler.detect_conflicts(owner.get_all_tasks())
+    print_messages("Conflict Warnings", conflicts)
+
+    scheduler.mark_task_complete("Mochi", "Morning walk")
+    updated_mochi_tasks = scheduler.filter_tasks_by_pet("Mochi")
+    print_task_list("Mochi Tasks After Completing Recurring Walk", updated_mochi_tasks)
+
+    completed_tasks = scheduler.filter_tasks_by_status(True)
+    print_schedule("Completed Tasks", completed_tasks)
 
 
 if __name__ == "__main__":
