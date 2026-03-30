@@ -51,3 +51,10 @@ PawPal+ includes several algorithmic scheduling features:
 - automatically creating the next occurrence of daily or weekly recurring tasks
 
 These features make the system more useful for managing pet care routines in a more organized and intelligent way.
+
+## Testing PawPal+
+
+To run the automated tests for PawPal+, use:
+
+```bash
+python -m pytest

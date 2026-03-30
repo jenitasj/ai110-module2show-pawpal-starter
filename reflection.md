@@ -57,15 +57,14 @@ One tradeoff my scheduler makes is that conflict detection only checks for exact
 - What behaviors did you test?
 - Why were these tests important?
 
-I tested whether calling mark_complete() updates a task's completion status and whether adding a task to a pet increases that pet's task count. These tests were important because they verify that the basic data model works correctly before building more advanced scheduling behavior.
+I tested core behaviors of the PawPal+ system, including task completion, adding tasks to a pet, sorting tasks by time, recurring task generation, conflict detection, filtering by status and pet name, and empty schedule behavior. These tests were important because they verify both the basic class functionality and the more advanced scheduling features introduced in the algorithmic layer.
 
 **b. Confidence**
 
 - How confident are you that your scheduler works correctly?
 - What edge cases would you test next if you had more time?
 
-I am pretty confident that my scheduler works correctly for basic scheduling because the CLI demo produced the expected output and my initial tests passed. If I had more time, I would test edge cases such as duplicate task times, invalid priorities, and recurring tasks.
-
+I am fairly confident that my scheduler works correctly for the main use cases because the automated tests cover both happy paths and edge cases, and all tests pass successfully. If I had more time, I would test additional edge cases such as overlapping task durations, duplicate pet names, and more complex schedules.
 
 ## 5. Reflection
 
